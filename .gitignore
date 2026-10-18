@@ -1,0 +1,7 @@
+bms-downloads/
+*~
+build/
+dist/
+*.json
+cookies.txt
+excluded_hosts.txt

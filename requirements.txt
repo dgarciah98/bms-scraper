@@ -1,0 +1,9 @@
+gdown[secretstorage]
+onedrivedownloader
+mediafiredl
+py3-wget
+mega-lite
+requests
+beautifulsoup4
+pyinstaller
+
