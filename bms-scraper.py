@@ -9,8 +9,10 @@ from mega_downloader  import download_mega_file
 
 baseurl = "https://manbow.nothing.sh/event/"
 excluded_hosts = []
-for l in open("excluded_hosts.txt", "r").readlines():
-    excluded_hosts.append(l.strip("\n"))
+
+if os.path.exists("excluded_hosts.txt"):
+    for l in open("excluded_hosts.txt", "r").readlines():
+        excluded_hosts.append(l.strip("\n"))
 
 event_entries = []
 
