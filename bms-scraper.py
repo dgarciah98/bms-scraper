@@ -199,15 +199,15 @@ if __name__ == '__main__':
         parser.add_argument("-e", "--event", help="Manbow Event ID, for scraping download links")
         parser.add_argument("-f", "--file", help="Path to event entries JSON file")
         parser.add_argument("-o", "--output-path", default="./bms-downloads", help="Where to download files")
-        parser.add_argument("-wf", "--write-event-to-file", help="Wheter to write scraped results or not to a JSON file", action="store_false")
+        parser.add_argument("-wf", "--dont-write-event-to-file", help="Whether to write or not scraped results to a JSON file", action="store_false")
         parser.add_argument("-d", "--download", help="Download files after scraping webpage", action="store_true")
         parser.add_argument("-sn", "--start-number", type=int, default=0, help="Starting entry number, will download from this entry onwards")
         parser.add_argument("-en", "--end-number", type=int, default=999, help="Ending entry number, will download up to this entry")
         args = parser.parse_args()
         event = args.event
-        urls_file = args.urls
+        urls_file = args.file
         path = args.output_path
-        write_to_file = args.write_event_to_file
+        write_to_file = args.dont_write_event_to_file
         download = args.download
         start_number = args.start_number
         end_number = args.end_number

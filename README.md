@@ -16,8 +16,8 @@ options:
   -f, --file FILE       Path to event entries JSON file (default: None)
   -o, --output-path OUTPUT_PATH
                         Where to download files (default: ./bms-downloads)
-  -wf, --write-event-to-file
-                        Wheter to write scraped results or not to a JSON file (default: True)
+  -wf, --dont-write-event-to-file
+                        Wheter to write or not scraped results to a JSON file (default: True)
   -d, --download        Download files after scraping webpage (default: False)
   -sn, --start-number START_NUMBER
                         Starting entry number, will download from this entry onwards (default: 0)
@@ -59,7 +59,7 @@ python bms-scraper.py -e <event_id> -d -o </your/desired/path>
 
 You may also bundle the tool into a executable file. For both Linux and Windows, you may simply run `pyinstaller`:
 ```bash
-pyinstaller -F bms-parser.py
+pyinstaller -F bms-parser.py --copy-metadata gdown
 ```
 
 If you need to create an EXE file in Linux, you can run [docker-pyinstaller](https://github.com/batonogov/docker-pyinstaller) to build it:

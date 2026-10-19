@@ -34,7 +34,7 @@ jobs:
 
     - name: Build executable
       run: |
-        pyinstaller -F ${{ env.MAIN_PY_FILE }}
+        pyinstaller -F ${{ env.MAIN_PY_FILE }} --copy-metadata gdown
       working-directory: ./
 
     - name: Create Artifact (Windows)
