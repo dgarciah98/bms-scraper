@@ -18,6 +18,7 @@ event_entries = []
 
 def scrape_event_page(event_id: str, start_number: int, end_number: int, write_to_file: bool):
     response = requests.get(f"{baseurl}event.cgi?action=URLList&event={event_id}&start={start_number}&end={end_number}")
+    response.encoding = response.apparent_encoding
     soup = BeautifulSoup(response.text, "html.parser")
 
     for tr in soup.find_all("tr")[1::]:
@@ -42,14 +43,14 @@ def scrape_event_page(event_id: str, start_number: int, end_number: int, write_t
         event_entries.append({
             "url": url,
             "number": number,
-            "artist": artist.encode("latin-1").decode("shift-jis"),
-            "title": song_name.encode("latin-1").decode("shift-jis"),
-            "team": team.encode("latin-1").decode("shift-jis"),
+            "artist": artist,
+            "title": song_name,
+            "team": team,
             "dlLinks": dlLinks            
         })
 
     if write_to_file:
-        with open("bms_event.json", "w+", ) as f:            
+        with open("bms_event.json", "w+", encoding="utf-8") as f:            
             json.dump(event_entries, f, indent=3, ensure_ascii=False)
             
     print(f"finished scraping event page, retrieved {len(event_entries)} entries")
