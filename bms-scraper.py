@@ -1,11 +1,12 @@
 import json, sys, os, argparse
-import wget, requests
+import requests
 from bs4 import BeautifulSoup
+from py3_wget import download_file
 
 import gdown
 from onedrivedownloader import download as onedrive_download
 from mediafiredl import MediafireDL as MF
-from mega_downloader  import download_mega_file
+from mega_downloader import download_mega_file, get_mega_file_info
 
 baseurl = "https://manbow.nothing.sh/event/"
 excluded_hosts = []
@@ -13,6 +14,15 @@ excluded_hosts = []
 if os.path.exists("excluded_hosts.txt"):
     for l in open("excluded_hosts.txt", "r").readlines():
         excluded_hosts.append(l.strip("\n"))
+
+hosts_mappings = {
+    "drive.google.com": "GOOGLE DRIVE",
+    "drive.usercontent.google.com": "RAW GOOGLE DRIVE",
+    "1drv.ms": "ONEDRIVE",
+    "mediafire.com": "MEDIAFIRE",
+    "dropbox.com": "DROPBOX", 
+    "mega.nz": "MEGA"
+}
 
 event_entries = []
 
@@ -76,6 +86,47 @@ def download_bms(file: str, dl_path: str):
             print(f"error opening file: {file}")
             print(e)
 
+def select_downloader(url: str, host: str, dl_path: str):
+    match host:
+        case "GOOGLE DRIVE":
+            if not "folders" in url:
+                gdown.download(url, dl_path, resume=True, retries=3, use_cookies=True, cookies_file="cookies.txt")
+            else:
+                gdown.download_folder(url, output=dl_path, resume=True, retries=3, use_cookies=True, cookies_file="cookies.txt")
+                
+        case "RAW GOOGLE DRIVE":
+            download_file(f"{url}&confirm=t", dl_path)
+            
+        case "ONEDRIVE":
+            if not "download=1" in url:
+                if not "?" in url:                                
+                    url = f"{url}?download=1"
+                else:
+                    url = f"{url}&download=1"
+            ret = onedrive_download(url, filename=dl_path, unzip=False, unzip_path=dl_path)
+            print(ret)
+                
+        case "MEDIAFIRE":
+            mf_filename = MF.GetName(url)
+            print(mf_filename)
+            if not os.path.exists(f"{dl_path}/{mf_filename}"):                                
+                MF.Download(url, dl_path)
+            else:
+                print("file already downloaded")
+                    
+        case "DROPBOX":
+            if "dl=0" in url:
+                url = url.replace("dl=0", "dl=1")
+                
+            gdown.download(url, dl_path, resume=True, retries=3)
+                
+        case "MEGA":
+            info = get_mega_file_info(url)
+            if not os.path.exists(f"{dl_path}/{info['name']}"):                                   
+                download_mega_file(url, dl_path)
+            else:
+                print("file already downloaded")
+
 def download_handler(event: list, dl_path: str):
     total_count = len(event)
     print(f"downloading bms files to directory '{dl_path}', {total_count} files total")
@@ -88,87 +139,32 @@ def download_handler(event: list, dl_path: str):
         for j, url in enumerate(urls):
             i_plus = i+1
             j_plus = j+1
-            if "drive.google.com" in url:
-                print(f"\n[{i_plus}/{total_count}] DOWNLOADING GOOGLE DRIVE URL [{j_plus}/{url_count}]\n")                        
-                try:
-                    if not "folders" in url:
-                        gdown.download(url, dl_path, resume=True, retries=3, use_cookies=True, cookies_file="cookies.txt")
-                    else:
-                        gdown.download_folder(url, output=dl_path, resume=True, retries=3, use_cookies=True, cookies_file="cookies.txt")
-                except Exception as e:                            
-                    _handle_error(song, failed_links, e)
+            downloaded = False
+            try:
+                for host in hosts_mappings.keys():             
+                    if host in url:
+                        print(f"\n[{i_plus}/{total_count}] DOWNLOADING {hosts_mappings[host]} URL [{j_plus}/{url_count}]\n")
+                        print(f"url: {url}")
+                        select_downloader(url, hosts_mappings[host], dl_path)
+                        print("DOWNLOADED SUCCESSFULLY")
+                        downloaded = True
+
+                if downloaded:
                     continue
                     
-            elif "drive.usercontent.google.com" in url:
-                print(f"\n[{i_plus}/{total_count}] DOWNLOADING GOOGLE DRIVE RAW URL [{j_plus}/{url_count}]\n")
-                print(f"url: {url}")
-                try:
-                    wget.download(f"{url}&confirm=t", out=dl_path)
-                except Exception as e:
-                    _handle_error(song, failed_links, e)
-                    continue
-                    
-            elif "1drv.ms" in url:
-                print(f"\n[{i_plus}/{total_count}] DOWNLOADING ONEDRIVE URL [{j_plus}/{url_count}]\n")
-                print(f"url: {url}")
-                if not "download=1" in url:
-                    if not "?" in url:                                
-                        url = f"{url}?download=1"
-                    else:
-                        url = f"{url}&download=1"
-                try:
-                    ret = onedrive_download(url=f"{url}&download=1", filename=dl_path, unzip=False, unzip_path=dl_path)
-                    print(ret)
-                except Exception as e:
-                    _handle_error(song, failed_links, e)
-                    continue
-                            
-            elif "mediafire.com" in url:
-                print(f"\n[{i_plus}/{total_count}] DOWNLOADING MEDIAFIRE URL [{j_plus}/{url_count}]\n")
-                try:
-                    mf_filename = MF.GetName(url)
-                    print(mf_filename)
-                    if not os.path.exists(f"{dl_path}/{mf_filename}"):                                
-                        MF.Download(url, dl_path)
-                    else:
-                        print("file already downloaded")
-                except Exception as e:
-                    _handle_error(song, failed_links, e)
-                    continue
-                    
-            elif "dropbox.com" in url:
-                print(f"\n[{i_plus}/{total_count}] DOWNLOADING DROPBOX URL [{j_plus}/{url_count}]\n")
-                if "dl=0" in url:
-                    url = url.replace("dl=0", "dl=1")
-                try:
-                    gdown.download(url, dl_path, resume=True, retries=3)
-                except Exception as e:
-                    _handle_error(song, failed_links, e)
-                    continue
-                        
-            elif "mega.nz" in url:
-                print(f"\n[{i_plus}/{total_count}] DOWNLOADING MEGA URL [{j_plus}/{url_count}]\n")
-                print(f"url: {url}")
-                try:
-                    download_mega_file(url, dl_path)
-                except Exception as e:
-                    _handle_error(song, failed_links, e)
-                    continue
-                
-            else:
                 print("\nRANDOM URL, CHECKING EXCLUDED HOSTS")
                 if any(s in url for s in excluded_hosts):
-                    print(f"SKIPPING URL: {url}")
-                    unsupported_links.append(song)
-                    continue
+                     print(f"SKIPPING URL: {url}")
+                     unsupported_links.append(song)
+                     continue
                 else:
                     print(f"URL CAN BE DOWNLOADED: {url}")
-                    try:                        
-                        gdown.download(url, dl_path, resume=True, retries=3, use_cookies=True)
-                    except Exception as e:
-                        _handle_error(song, failed_links, e)
-                        continue
-            print("DOWNLOADED SUCCESSFULLY")
+                    gdown.download(url, dl_path, resume=True, retries=3, use_cookies=True)
+                    print("DOWNLOADED SUCCESSFULLY")
+                     
+            except Exception as e:
+                _handle_error(song, failed_links, e)
+                continue
                     
     if unsupported_links:
         print("found unsupported urls, writing to 'unsupported_links.json'")

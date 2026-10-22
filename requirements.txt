@@ -1,7 +1,7 @@
 gdown[secretstorage]
 onedrivedownloader
 mediafiredl
-wget
+py3-wget
 mega-lite
 requests
 beautifulsoup4
